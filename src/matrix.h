@@ -63,10 +63,10 @@ class Matrix {
 			}
 		}
 
-	template<typename MatrixType> requires isSizedMatrix<MatrixType, sizeI, sizeJ> isTypedMatrix<MatrixType, Type> // TODO Make this double concept requires work
+		template<typename MatrixType> requires isSizedMatrix<MatrixType, sizeI, sizeJ> && isTypedMatrix<MatrixType, Type>
 		Matrix(MatrixType const& other) : size(sizeI * sizeJ) {
-			this->value = new Type[this->size];
 			std::cout << "Copy constructing" << std::endl;
+			this->value = new Type[this->size];
 
 			for(auto i(0) ; i<sizeI ; i++) {
 				for(auto j(0) ; j<sizeJ ; j++) {
@@ -76,14 +76,21 @@ class Matrix {
 			}
 		}
 
-		template<typename MatrixType> requires isSizedMatrix<MatrixType, sizeI, sizeJ> isTypedMatrix<MatrixType, Type> // TODO Make this double concept requires work
-		Matrix(MatrixType const&& other) : size(sizeI * sizeJ) {
-			this->value = (Type*) other.getValue();
+		template<typename MatrixType> requires isSizedMatrix<MatrixType, sizeI, sizeJ> && isTypedMatrix<MatrixType, Type>
+		Matrix(MatrixType&& other) : size(sizeI * sizeJ) {
+			std::cout << "Move constructing" << std::endl;
+			this->value = other.stealValue();
 		}
 
 		~Matrix() {
 			delete[] this->value;
 			this->value = nullptr;
+		}
+
+		Type* stealValue() {
+			Type* toReturn(this->value);
+			this->value = nullptr;
+			return toReturn;
 		}
 
 		// Getters / Setters
@@ -135,11 +142,11 @@ class MatrixSum {
 			return this->matrixA->get(i, j) + this->matrixB->get(i, j);
 		}
 
-		int getSizeI() const {
+		constexpr int getSizeI() const {
 			return this->matrixA->getSizeI();
 		}
 
-		int getSizeJ() const {
+		constexpr int getSizeJ() const {
 			return this->matrixA->getSizeJ();
 		}
 
