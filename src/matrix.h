@@ -37,12 +37,6 @@ concept isSizedMatrix = requires(Type obj) {
 	requires (obj.getSizeJ() == sizeJ);
 };
 
-template<typename MatrixType, typename Type>
-concept isModifiableMatrix = requires(MatrixType obj, int num1, int num2, Type val) {
-	requires isTypedMatrix<MatrixType, Type>;
-	obj.set(num1, num2, val);
-};
-
 template<typename Type1, typename Type2>
 concept isAddableMatrix = requires(Type1 obj1, Type2 obj2, int num1, int num2) {
 	requires isMatrix<Type1>;
@@ -50,6 +44,21 @@ concept isAddableMatrix = requires(Type1 obj1, Type2 obj2, int num1, int num2) {
 	obj1.get(num1, num2) + obj2.get(num1, num2);
 	requires (obj1.getSizeI() == obj2.getSizeI());
 	requires (obj1.getSizeJ() == obj2.getSizeJ());
+};
+
+template<typename Type1, typename Type2>
+concept isMultipliableMatrix = requires(Type1 obj1, Type2 obj2, int num1, int num2) {
+	requires isMatrix<Type1>;
+	requires isMatrix<Type2>;
+	obj1.get(num1, num2) + obj2.get(num1, num2);
+	obj1.get(num1, num2) * obj1.get(num1, num2);
+	requires (obj1.getSizeJ() == obj2.getSizeI());
+};
+
+template<typename Type, typename MatrixType>
+concept isPutableInMatrix = requires(MatrixType matrix, Type val, int num1, int num2) {
+	requires isTypedMatrix<MatrixType, Type>;
+	matrix.set(num1, num2, val);
 };
 
 template<typename Type, int sizeI, int sizeJ> requires canBeInMatrix<Type>
@@ -152,6 +161,36 @@ class MatrixSum {
 
 
 	protected:
+		const Type1* matrixA;
+		const Type2* matrixB;
+
+};
+
+template<isMatrix Type1, isMatrix Type2> requires isMultipliableMatrix<Type1, Type2>
+class MatrixProduct {
+	public:
+		MatrixProduct(Type1 const& a, Type2 const& b) {
+			this->matrixA = &a;
+			this->matrixB = &b;
+		}
+
+		auto get(int i, int j) const {
+			isPutableInMatrix<Type1> auto toReturn;
+			for(auto k(0) ; k<this->matrixA->getSizeJ() ; k++) {
+				toReturn += this->matrixA->get(i, k) * this->matrixB->get(k, j);
+			}
+			return toReturn;
+		}
+
+		constexpr int getSizeI() const {
+			return this->matrixA->getSizeI();
+		}
+
+		constexpr int getSizeJ() const {
+			return this->matrixB->getSizeJ();
+		}
+
+	private:
 		const Type1* matrixA;
 		const Type2* matrixB;
 
