@@ -3,30 +3,22 @@
 
 #include <iostream>
 
-template<typename Type>
-concept canBeInMatrix = requires(Type obj, std::ostream stream) {
-	obj += obj;
-	{obj + obj} -> std::convertible_to<Type>;
-	{obj * obj} -> std::convertible_to<Type>;
-};
-
-template<typename Type>
-concept isMatrix = requires(Type obj, int num1, int num2) {
+template<typename MatrixType>
+concept isMatrix = requires(MatrixType obj, int num1, int num2) {
 	obj.get(num1, num2);
 	{obj.getSizeI()} -> std::same_as<int>;
 	{obj.getSizeJ()} -> std::same_as<int>;
 };
 
-template<typename Type>
-concept isPrintableMatrix = requires(Type obj, std::ostream stream, int num1, int num2) {
-	requires isMatrix<Type>;
+template<typename MatrixType>
+concept isPrintableMatrix = requires(MatrixType obj, std::ostream stream, int num1, int num2) {
+	requires isMatrix<MatrixType>;
 	stream << obj.get(num1, num2);
 };
 
 template<typename MatrixType, typename Type>
 concept isTypedMatrix = requires(MatrixType obj, int num1, int num2) {
 	requires isMatrix<MatrixType>;
-	requires canBeInMatrix<Type>;
 	{obj.get(num1, num2)} -> std::same_as<Type>;
 };
 
@@ -35,6 +27,12 @@ concept isSizedMatrix = requires(Type obj) {
 	requires isMatrix<Type>;
 	requires (obj.getSizeI() == sizeI);
 	requires (obj.getSizeJ() == sizeJ);
+};
+
+template<typename Type>
+concept isSquareMatrix = requires(Type obj) {
+	requires isMatrix<Type>;
+	requires (obj.getSizeI() == obj.getSizeJ());
 };
 
 template<typename Type1, typename Type2>
@@ -61,7 +59,7 @@ concept isPutableInMatrix = requires(MatrixType matrix, Type val, int num1, int 
 	matrix.set(num1, num2, val);
 };
 
-template<typename Type, int sizeI, int sizeJ> requires canBeInMatrix<Type>
+template<typename Type, int sizeI, int sizeJ>
 class Matrix {
 	public:
 		Matrix() : size(sizeI * sizeJ) {
@@ -166,35 +164,35 @@ class MatrixSum {
 
 };
 
-template<isMatrix Type1, isMatrix Type2> requires isMultipliableMatrix<Type1, Type2>
-class MatrixProduct {
-	public:
-		MatrixProduct(Type1 const& a, Type2 const& b) {
-			this->matrixA = &a;
-			this->matrixB = &b;
-		}
+/* template<isMatrix Type1, isMatrix Type2> requires isMultipliableMatrix<Type1, Type2> */
+/* class MatrixProduct { */
+/* 	public: */
+/* 		MatrixProduct(Type1 const& a, Type2 const& b) { */
+/* 			this->matrixA = &a; */
+/* 			this->matrixB = &b; */
+/* 		} */
 
-		auto get(int i, int j) const {
-			isPutableInMatrix<Type1> auto toReturn;
-			for(auto k(0) ; k<this->matrixA->getSizeJ() ; k++) {
-				toReturn += this->matrixA->get(i, k) * this->matrixB->get(k, j);
-			}
-			return toReturn;
-		}
+/* 		auto get(int i, int j) const { */
+/* 			isPutableInMatrix<Type1> auto toReturn; */
+/* 			for(auto k(0) ; k<this->matrixA->getSizeJ() ; k++) { */
+/* 				toReturn += this->matrixA->get(i, k) * this->matrixB->get(k, j); */
+/* 			} */
+/* 			return toReturn; */
+/* 		} */
 
-		constexpr int getSizeI() const {
-			return this->matrixA->getSizeI();
-		}
+/* 		constexpr int getSizeI() const { */
+/* 			return this->matrixA->getSizeI(); */
+/* 		} */
 
-		constexpr int getSizeJ() const {
-			return this->matrixB->getSizeJ();
-		}
+/* 		constexpr int getSizeJ() const { */
+/* 			return this->matrixB->getSizeJ(); */
+/* 		} */
 
-	private:
-		const Type1* matrixA;
-		const Type2* matrixB;
+/* 	private: */
+/* 		const Type1* matrixA; */
+/* 		const Type2* matrixB; */
 
-};
+/* }; */
 
 template<isPrintableMatrix Type>
 std::ostream& operator << (std::ostream& stream, Type const& a) {
@@ -226,5 +224,15 @@ template<isMatrix Type1, isMatrix Type2> requires isAddableMatrix<Type1, Type2>
 MatrixSum<Type1, Type2> operator + (Type1 const& a, Type2 const& b) {
 	return MatrixSum(a, b);
 }
+
+template<isSquareMatrix MatrixType, isPutableInMatrix<MatrixType> Type>
+Type trace(MatrixType const& matrix) {
+	Type toReturn;
+	for(auto i(0) ; i<matrix.getSizeI(); i++) {
+		toReturn += matrix.get(i, i);
+	}
+	return toReturn;
+}
+
 
 #endif
